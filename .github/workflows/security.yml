@@ -34,7 +34,7 @@ jobs:
         run: docker build --tag rpi-node-ts-starter:security .
 
       - name: Scan runtime image
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: rpi-node-ts-starter:security
           format: table
