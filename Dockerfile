@@ -1,8 +1,9 @@
 FROM node:20-alpine AS build
 
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY package.json package-lock.json ./
+# --include=dev avoids a host/build environment that globally omits TypeScript.
+RUN npm ci --include=dev && test -x node_modules/.bin/tsc
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
