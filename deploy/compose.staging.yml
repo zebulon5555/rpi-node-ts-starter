@@ -3,6 +3,8 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
+      # Pi2 Docker bridge DNS cannot resolve npm registry; use its host resolver while building only.
+      network: host
     restart: unless-stopped
     init: true
     environment:
