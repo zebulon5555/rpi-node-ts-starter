@@ -16,7 +16,8 @@ ENV NODE_ENV=production
 # the ARM BuildKit build from running two npm network installs concurrently.
 COPY --from=build /app/package.json /app/package-lock.json ./
 COPY --from=build /app/node_modules ./node_modules
-RUN npm prune --omit=dev && npm cache clean --force
+# npm 10 is the supported line for Node 20 and carries current bundled dependency fixes.
+RUN npm install --global npm@10 && npm prune --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 
 USER node
