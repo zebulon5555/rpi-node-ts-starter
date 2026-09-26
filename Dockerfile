@@ -12,8 +12,11 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Reuse the build-stage dependency tree, then remove dev-only packages. This keeps
+# the ARM BuildKit build from running two npm network installs concurrently.
+COPY --from=build /app/package.json /app/package-lock.json ./
+COPY --from=build /app/node_modules ./node_modules
+RUN npm prune --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 
 USER node
