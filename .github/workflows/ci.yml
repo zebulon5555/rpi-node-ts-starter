@@ -69,16 +69,9 @@ jobs:
             git clone --depth 1 https://github.com/zebulon5555/rpi-node-ts-starter.git "$app_dir"
           fi
           cd "$app_dir"
+          previous_revision=$(git rev-parse HEAD 2>/dev/null || true)
           git fetch --depth 1 origin "$revision"
           git checkout --detach --force "$revision"
-          docker compose -p devops-staging -f deploy/compose.staging.yml up -d --build --remove-orphans
-          for _ in $(seq 1 24); do
-            if curl --fail --silent --show-error http://127.0.0.1:3010/health | grep -qx '{"status":"ok"}'; then
-              docker compose -p devops-staging -f deploy/compose.staging.yml ps
-              exit 0
-            fi
-            sleep 2
-          done
-          docker compose -p devops-staging -f deploy/compose.staging.yml logs --tail=100
-          exit 1
+          chmod 0755 deploy/staging-deploy.sh
+          ./deploy/staging-deploy.sh "$previous_revision"
           REMOTE
