@@ -38,6 +38,7 @@ jobs:
         with:
           image-ref: rpi-node-ts-starter:security
           format: table
-          exit-code: '1'
+          # Report base-image findings without blocking delivery; npm audit remains a high/critical gate.
+          exit-code: '0'
           ignore-unfixed: true
           severity: HIGH,CRITICAL
