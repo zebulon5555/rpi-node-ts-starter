@@ -16,7 +16,10 @@ ENV NODE_ENV=production
 # the ARM BuildKit build from running two npm network installs concurrently.
 COPY --from=build /app/package.json /app/package-lock.json ./
 COPY --from=build /app/node_modules ./node_modules
-RUN npm prune --omit=dev && npm cache clean --force
+# npm is build-only; remove it from the runtime image after pruning dependencies.
+RUN npm install --global npm@10 && npm prune --omit=dev && npm cache clean --force \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
+    && rm -f package.json package-lock.json
 COPY --from=build /app/dist ./dist
 
 USER node
