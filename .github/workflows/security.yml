@@ -1,0 +1,43 @@
+name: Security scan
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-and-image-scan:
+    name: npm audit and Trivy image scan
+    runs-on: [self-hosted, linux, x64, zbot]
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependency graph
+        run: npm ci --no-audit --no-fund
+
+      - name: Block high and critical npm vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build image for scanning
+        run: docker build --tag rpi-node-ts-starter:security .
+
+      - name: Scan runtime image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: rpi-node-ts-starter:security
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL

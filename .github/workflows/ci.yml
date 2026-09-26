@@ -108,3 +108,30 @@ jobs:
           chmod 0755 deploy/staging-deploy.sh
           ./deploy/staging-deploy.sh "ghcr.io/zebulon5555/rpi-node-ts-starter:${revision}" "$previous_revision"
           REMOTE
+
+  notify-telegram:
+    name: Notify Telegram about main pipeline result
+    needs: [build, publish-image, deploy-staging]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, x64, zbot]
+    timeout-minutes: 5
+    env:
+      BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID }}
+      BUILD_RESULT: ${{ needs.build.result }}
+      PUBLISH_RESULT: ${{ needs.publish-image.result }}
+      DEPLOY_RESULT: ${{ needs.deploy-staging.result }}
+      REVISION: ${{ github.sha }}
+    steps:
+      - name: Send deployment status
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$BOT_TOKEN" && -n "$CHAT_ID" ]]
+          if [[ "$BUILD_RESULT/$PUBLISH_RESULT/$DEPLOY_RESULT" == "success/success/success" ]]; then
+            headline="✅ Pi2 staging deploy sikeres"
+          else
+            headline="❌ Pi2 staging pipeline hiba"
+          fi
+          message=$(printf '%s\nRepo: %s\nCommit: %s\nBuild: %s | GHCR: %s | Deploy: %s\nRun: %s' "$headline" "$GITHUB_REPOSITORY" "${REVISION:0:12}" "$BUILD_RESULT" "$PUBLISH_RESULT" "$DEPLOY_RESULT" "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")
+          curl --fail --silent --show-error --request POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" --data-urlencode "chat_id=$CHAT_ID" --data-urlencode "text=$message"
