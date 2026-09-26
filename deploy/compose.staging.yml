@@ -1,10 +1,6 @@
 services:
   app:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-      # Pi2 Docker bridge DNS cannot resolve npm registry; use its host resolver while building only.
-      network: host
+    image: ${APP_IMAGE:?APP_IMAGE must identify the immutable GHCR image tag}
     restart: unless-stopped
     init: true
     environment:
